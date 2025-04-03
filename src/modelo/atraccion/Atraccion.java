@@ -4,33 +4,33 @@ import java.util.Date;
 import java.util.Map;
 
 /**
- * Clase abstracta que representa una Atracción en el parque de diversiones.
- * Contiene atributos y métodos básicos comunes a todo tipo de atracción.
+ * Clase abstracta que representa una Atracción en el parque.
+ * Esta clase define los atributos y métodos básicos comunes a todas las atracciones.
  */
 public abstract class Atraccion {
 
-    // Constantes para el estado operativo
+    // Constantes para definir estados (sin usar enum)
     public static final String OPERATIVO = "OPERATIVO";
     public static final String MANTENIMIENTO = "MANTENIMIENTO";
     public static final String FUERA_DE_SERVICIO = "FUERA_DE_SERVICIO";
 
-    // Atributos
+    // Atributos comunes
     protected int id;
     protected String nombre;
     protected int capacidad;
     protected String ubicacion;
-    protected String nivelExclusividad; // Ejemplo: "Familiar", "Oro", "Diamante"
+    protected String nivelExclusividad; // Ej.: "Familiar", "Oro", "Diamante"
     protected String estadoOperativo;
     protected Date mantenimientoProgramado;
 
     /**
-     * Constructor de la clase Atraccion.
+     * Constructor de Atraccion.
      *
      * @param id                Identificador único de la atracción.
      * @param nombre            Nombre de la atracción.
      * @param capacidad         Capacidad máxima de personas.
-     * @param ubicacion         Ubicación fija de la atracción en el parque.
-     * @param nivelExclusividad Nivel de exclusividad (por ejemplo, "Familiar", "Oro", "Diamante").
+     * @param ubicacion         Ubicación de la atracción dentro del parque.
+     * @param nivelExclusividad Nivel de exclusividad (Familiar, Oro, Diamante).
      */
     public Atraccion(int id, String nombre, int capacidad, String ubicacion, String nivelExclusividad) {
         this.id = id;
@@ -38,13 +38,12 @@ public abstract class Atraccion {
         this.capacidad = capacidad;
         this.ubicacion = ubicacion;
         this.nivelExclusividad = nivelExclusividad;
-        this.estadoOperativo = OPERATIVO; // Estado inicial
+        this.estadoOperativo = OPERATIVO;  // Estado inicial
         this.mantenimientoProgramado = null;
     }
 
     /**
      * Registra la atracción en el sistema.
-     * Se podría utilizar para asignar un ID único, establecer el estado inicial y agregarla a un catálogo.
      */
     public void registrar() {
         System.out.println("Registrando atracción: " + nombre + " (ID: " + id + ")");
@@ -54,9 +53,9 @@ public abstract class Atraccion {
     /**
      * Actualiza la información de la atracción.
      *
-     * @param nuevoNombre           Nuevo nombre de la atracción.
-     * @param nuevaCapacidad        Nueva capacidad máxima.
-     * @param nuevaUbicacion        Nueva ubicación en el parque.
+     * @param nuevoNombre           Nuevo nombre.
+     * @param nuevaCapacidad        Nueva capacidad.
+     * @param nuevaUbicacion        Nueva ubicación.
      * @param nuevoNivelExclusividad Nuevo nivel de exclusividad.
      */
     public void actualizar(String nuevoNombre, int nuevaCapacidad, String nuevaUbicacion, String nuevoNivelExclusividad) {
@@ -68,33 +67,21 @@ public abstract class Atraccion {
     }
 
     /**
-     * Valida el acceso a la atracción en función de ciertos parámetros.
+     * Valida el acceso a la atracción según parámetros proporcionados.
+     * Este método se puede sobreescribir en las subclases para validaciones específicas.
      *
-     * @param parametros Un mapa con claves como "altura", "peso", "edad", "condicionesMedicas", etc.
+     * @param parametros Un mapa que puede contener claves como "altura", "peso", "edad", etc.
      * @return true si se cumplen los requisitos, false en caso contrario.
      */
     public boolean validarAcceso(Map<String, Object> parametros) {
-        // Ejemplo para atracciones mecánicas: se validan altura y peso.
-        if (parametros.containsKey("altura") && parametros.containsKey("peso")) {
-            Object alturaObj = parametros.get("altura");
-            Object pesoObj = parametros.get("peso");
-            if (alturaObj instanceof Number && pesoObj instanceof Number) {
-                double altura = ((Number) alturaObj).doubleValue();
-                double peso = ((Number) pesoObj).doubleValue();
-                System.out.println("Validando acceso para " + nombre + " con altura: " + altura + " y peso: " + peso);
-                // Aquí se agregaría la lógica para comparar con límites específicos.
-                return true;
-            }
-        }
-        // Ejemplo para atracciones culturales: se valida la edad.
+        // Implementación por defecto: si se pasa "edad", requiere al menos 18 años.
         if (parametros.containsKey("edad")) {
-            Object edadObj = parametros.get("edad");
-            if (edadObj instanceof Number) {
-                int edad = ((Number) edadObj).intValue();
-                System.out.println("Validando acceso para " + nombre + " con edad: " + edad);
-                // Ejemplo: se requiere que la edad sea mayor o igual a 18.
-                return edad >= 18;
-            }
+            int edad = ((Number) parametros.get("edad")).intValue();
+            return edad >= 18;
+        }
+        // Si se pasan "altura" y "peso", simplemente retorna true (se espera sobreescritura en subclases)
+        if (parametros.containsKey("altura") && parametros.containsKey("peso")) {
+            return true;
         }
         return false;
     }
@@ -107,19 +94,19 @@ public abstract class Atraccion {
     public void programarMantenimiento(Date fecha) {
         this.mantenimientoProgramado = fecha;
         this.estadoOperativo = MANTENIMIENTO;
-        System.out.println("Mantenimiento programado para " + fecha + " en la atracción: " + nombre);
+        System.out.println("Mantenimiento programado para " + fecha + " en " + nombre);
     }
 
     /**
-     * Retorna el estado operativo actual de la atracción.
+     * Retorna el estado operativo actual.
      *
-     * @return Estado operativo como String (OPERATIVO, MANTENIMIENTO o FUERA_DE_SERVICIO).
+     * @return Estado operativo como String.
      */
     public String obtenerEstado() {
         return this.estadoOperativo;
     }
 
-    // Getters (y Setters si se requieren)
+    // Getters
     public int getId() {
         return id;
     }
