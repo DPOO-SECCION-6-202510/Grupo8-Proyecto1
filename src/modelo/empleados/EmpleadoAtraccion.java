@@ -1,7 +1,10 @@
 package modelo.empleados;
 
+
 import java.util.ArrayList;
 import java.util.List;
+
+import modelo.atraccion.Atraccion;
 
 public class EmpleadoAtraccion extends Empleado {
     private String capacidadRiesgo;

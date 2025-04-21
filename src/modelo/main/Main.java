@@ -1,9 +1,11 @@
 package modelo.main;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
-import java.util.Date;
+
 import modelo.empleados.Cliente;
 import modelo.empleados.Empleado;
 import modelo.atraccion.Atraccion;
@@ -17,96 +19,82 @@ import modelo.persistencia.PersistenceAtracciones;
 import modelo.persistencia.PersistenceTiquetes;
 
 public class Main {
-    
-    // Listas de datos en memoria
-    private static List<Cliente> clientes = new ArrayList<>();
-    private static List<Empleado> empleados = new ArrayList<>();
-    private static List<Atraccion> atracciones = new ArrayList<>();
+
+    // Datos en memoria
+    private static List<Cliente> clientes       = new ArrayList<>();
+    private static List<Empleado> empleados     = new ArrayList<>();
+    private static List<Atraccion> atracciones  = new ArrayList<>();
     private static List<TiquetesNormales> tiquetes = new ArrayList<>();
-    
-    // Instancias de las clases de persistencia (directorio "data" como ejemplo)
-    private static PersistenceClientes persClientes = new PersistenceClientes("data");
-    private static PersistenceEmpleados persEmpleados = new PersistenceEmpleados("data");
-    private static PersistenceAtracciones persAtracciones = new PersistenceAtracciones("data");
-    private static PersistenceTiquetes persTiquetes = new PersistenceTiquetes("data");
-    
+
+    // Persistencia
+    private static PersistenceClientes       persClientes    = new PersistenceClientes("data");
+    private static PersistenceEmpleados      persEmpleados   = new PersistenceEmpleados("data");
+    private static PersistenceAtracciones    persAtracciones = new PersistenceAtracciones("data");
+    private static PersistenceTiquetes       persTiquetes    = new PersistenceTiquetes("data");
+
     private static Scanner scanner = new Scanner(System.in);
-    
+
     public static void main(String[] args) {
-        int opcion = -1;
-        while (opcion != 0) {
-            System.out.println("\n===== MENU DEL SISTEMA DE PARQUE DE DIVERSIONES =====");
+        int opcion;
+        do {
+            System.out.println("\n===== MENU DEL SISTEMA DE PARQUE =====");
             System.out.println("1. Agregar Cliente");
             System.out.println("2. Agregar Trabajador");
             System.out.println("3. Agregar Atracción");
             System.out.println("4. Asignar Trabajador a Atracción");
-            System.out.println("5. Vender Tiquete (Trabajador de taquilla vende a un Cliente)");
-            System.out.println("6. Guardar Datos (Persistencia a JSON)");
-            System.out.println("7. Cargar Datos desde JSON");
-            System.out.println("8. Mostrar Información del Sistema");
+            System.out.println("5. Vender Tiquete");
+            System.out.println("6. Guardar Datos");
+            System.out.println("7. Cargar Datos");
+            System.out.println("8. Mostrar Información");
+            System.out.println("9. Validar Acceso a Atracción");
             System.out.println("0. Salir");
             System.out.print("Seleccione una opción: ");
-            opcion = scanner.nextInt();
-            scanner.nextLine(); // Consumir el salto de línea
-            
+            opcion = Integer.parseInt(scanner.nextLine());
+
             switch (opcion) {
-                case 1:
-                    agregarCliente();
-                    break;
-                case 2:
-                    agregarTrabajador();
-                    break;
-                case 3:
-                    agregarAtraccion();
-                    break;
-                case 4:
-                    asignarTrabajadorAAtraccion();
-                    break;
-                case 5:
-                    venderTiquete();
-                    break;
-                case 6:
-                    guardarDatos();
-                    break;
-                case 7:
-                    cargarDatos();
-                    break;
-                case 8:
-                    mostrarInformacion();
-                    break;
-                case 0:
-                    System.out.println("Saliendo del sistema...");
-                    break;
-                default:
-                    System.out.println("Opción no válida. Intente nuevamente.");
+                case 1: agregarCliente();                 break;
+                case 2: agregarTrabajador();              break;
+                case 3: agregarAtraccion();               break;
+                case 4: asignarTrabajadorAAtraccion();    break;
+                case 5: venderTiquete();                  break;
+                case 6: guardarDatos();                   break;
+                case 7: cargarDatos();                    break;
+                case 8: mostrarInformacion();             break;
+                case 9: validarAcceso();                  break;
+                case 0: System.out.println("Saliendo...");break;
+                default: System.out.println("Opción no válida."); 
             }
-        }
+        } while (opcion != 0);
         scanner.close();
     }
-    
-    // Opciones del menú:
-    
+
     private static void agregarCliente() {
         System.out.print("Ingrese ID del cliente: ");
-        int id = scanner.nextInt();
-        scanner.nextLine();
+        int id = Integer.parseInt(scanner.nextLine());
         System.out.print("Ingrese nombre del cliente: ");
         String nombre = scanner.nextLine();
         System.out.print("Ingrese login del cliente: ");
         String login = scanner.nextLine();
         System.out.print("Ingrese contraseña: ");
         String password = scanner.nextLine();
-        
-        // Asumimos que para cliente el tipo es CLIENTE (definido en TipoUsuario dentro de Usuario)
-        Cliente cliente = new Cliente(id, nombre, login, password, modelo.empleados.TipoUsuario.CLIENTE);
-        clientes.add(cliente);
+        System.out.print("Ingrese riesgos de salud (separados por comas): ");
+        String riesgos = scanner.nextLine();
+        System.out.print("Ingrese altura del cliente en metros: ");
+        double altura = Double.parseDouble(scanner.nextLine());
+        System.out.print("Ingrese peso del cliente en kg: ");
+        double peso = Double.parseDouble(scanner.nextLine());
+
+        // Nuevo constructor de Cliente que incluye riesgos, altura y peso
+        Cliente c = new Cliente(id, nombre, login, password,
+                                modelo.empleados.TipoUsuario.CLIENTE,
+                                riesgos, altura, peso);
+        clientes.add(c);
         System.out.println("Cliente agregado correctamente.");
     }
-    
+
     private static void agregarTrabajador() {
         System.out.print("Ingrese ID del trabajador: ");
-        int id = scanner.nextInt();
-        scanner.nextLine();
+        int id = Integer.parseInt(scanner.nextLine());
         System.out.print("Ingrese nombre del trabajador: ");
         String nombre = scanner.nextLine();
         System.out.print("Ingrese login del trabajador: ");
@@ -115,192 +103,199 @@ public class Main {
         String password = scanner.nextLine();
         System.out.print("Ingrese cargo: ");
         String cargo = scanner.nextLine();
-        
-        // Asumimos el tipo EMPLEADO para trabajadores
-        Empleado trabajador = new Empleado(id, nombre, login, password, modelo.empleados.TipoUsuario.EMPLEADO, cargo);
-        empleados.add(trabajador);
+
+        Empleado e = new Empleado(id, nombre, login, password,
+                                  modelo.empleados.TipoUsuario.EMPLEADO,
+                                  cargo);
+        empleados.add(e);
         System.out.println("Trabajador agregado correctamente.");
     }
-    
+
     private static void agregarAtraccion() {
-        System.out.println("Seleccione el tipo de atracción: 1 para Mecánica, 2 para Cultural");
-        int tipo = scanner.nextInt();
-        scanner.nextLine();
+        System.out.println("Seleccione tipo de atracción: 1=Mecánica, 2=Cultural");
+        int tipo = Integer.parseInt(scanner.nextLine());
         System.out.print("Ingrese ID de la atracción: ");
-        int id = scanner.nextInt();
-        scanner.nextLine();
-        System.out.print("Ingrese nombre de la atracción: ");
+        int id = Integer.parseInt(scanner.nextLine());
+        System.out.print("Ingrese nombre: ");
         String nombre = scanner.nextLine();
         System.out.print("Ingrese capacidad: ");
-        int capacidad = scanner.nextInt();
-        scanner.nextLine();
+        int capacidad = Integer.parseInt(scanner.nextLine());
         System.out.print("Ingrese ubicación: ");
         String ubicacion = scanner.nextLine();
-        System.out.print("Ingrese nivel de exclusividad (Familiar, Oro, Diamante): ");
-        String nivelExclusividad = scanner.nextLine();
-        
-        if (tipo == 1) { // Atracción mecánica
-            System.out.print("Ingrese límite mínimo de altura (en metros): ");
-            double minAltura = scanner.nextDouble();
-            System.out.print("Ingrese límite máximo de altura (en metros): ");
-            double maxAltura = scanner.nextDouble();
-            System.out.print("Ingrese límite mínimo de peso (en kg): ");
-            double minPeso = scanner.nextDouble();
-            System.out.print("Ingrese límite máximo de peso (en kg): ");
-            double maxPeso = scanner.nextDouble();
-            scanner.nextLine();
-            System.out.print("Ingrese nivel de riesgo (Medio/Alto): ");
-            String nivelRiesgo = scanner.nextLine();
-            System.out.print("Ingrese contraindicaciones (separadas por comas): ");
-            String contraindicaciones = scanner.nextLine();
-            
-            AtraccionMecanica atraccion = new AtraccionMecanica(id, nombre, capacidad, ubicacion, nivelExclusividad,
-                    minAltura, maxAltura, minPeso, maxPeso, nivelRiesgo, contraindicaciones);
-            atraccion.registrar();
-            atracciones.add(atraccion);
+        System.out.print("Nivel de exclusividad (Familiar, Oro, Diamante): ");
+        String nivel = scanner.nextLine();
+
+        if (tipo == 1) {
+            System.out.print("Altura mínima (m): ");
+            double minAlt = Double.parseDouble(scanner.nextLine());
+            System.out.print("Altura máxima (m): ");
+            double maxAlt = Double.parseDouble(scanner.nextLine());
+            System.out.print("Peso mínimo (kg): ");
+            double minPeso = Double.parseDouble(scanner.nextLine());
+            System.out.print("Peso máximo (kg): ");
+            double maxPeso = Double.parseDouble(scanner.nextLine());
+            System.out.print("Nivel de riesgo (Medio/Alto): ");
+            String riesgo = scanner.nextLine();
+            System.out.print("Contraindicaciones (coma sep.): ");
+            String contra = scanner.nextLine();
+
+            AtraccionMecanica am = new AtraccionMecanica(
+                id, nombre, capacidad, ubicacion, nivel,
+                minAlt, maxAlt, minPeso, maxPeso, riesgo, contra
+            );
+            am.registrar();
+            atracciones.add(am);
             System.out.println("Atracción mecánica agregada.");
-        } else if (tipo == 2) { // Atracción cultural
-            System.out.print("Ingrese restricción de edad: ");
-            int restriccionEdad = scanner.nextInt();
-            scanner.nextLine();
-            System.out.print("Ingrese descripción temática: ");
-            String descripcionTematica = scanner.nextLine();
-            
-            AtraccionCultural atraccion = new AtraccionCultural(id, nombre, capacidad, ubicacion, nivelExclusividad,
-                    restriccionEdad, descripcionTematica);
-            atraccion.registrar();
-            atracciones.add(atraccion);
-            System.out.println("Atracción cultural agregada.");
         } else {
-            System.out.println("Opción no válida.");
+            System.out.print("Edad mínima: ");
+            int edad = Integer.parseInt(scanner.nextLine());
+            System.out.print("Descripción temática: ");
+            String desc = scanner.nextLine();
+
+            AtraccionCultural ac = new AtraccionCultural(
+                id, nombre, capacidad, ubicacion, nivel, edad, desc
+            );
+            ac.registrar();
+            atracciones.add(ac);
+            System.out.println("Atracción cultural agregada.");
         }
     }
-    
+
     private static void asignarTrabajadorAAtraccion() {
-        System.out.print("Ingrese el ID de la atracción para asignar un trabajador: ");
-        int idAtraccion = scanner.nextInt();
-        scanner.nextLine();
-        Atraccion atracSeleccionada = null;
-        for (Atraccion a : atracciones) {
-            if (a.getId() == idAtraccion) {
-                atracSeleccionada = a;
-                break;
-            }
-        }
-        if (atracSeleccionada == null) {
+        System.out.print("ID atracción: ");
+        int idA = Integer.parseInt(scanner.nextLine());
+        Atraccion atr = atracciones.stream()
+            .filter(a -> a.getId() == idA)
+            .findFirst().orElse(null);
+        if (atr == null) {
             System.out.println("Atracción no encontrada.");
             return;
         }
-        System.out.print("Ingrese el ID del trabajador a asignar: ");
-        int idTrabajador = scanner.nextInt();
-        scanner.nextLine();
-        Empleado trabajadorAsignar = null;
-        for (Empleado t : empleados) {
-            if (t.getId() == idTrabajador) {
-                trabajadorAsignar = t;
-                break;
-            }
-        }
-        if (trabajadorAsignar == null) {
+        System.out.print("ID trabajador: ");
+        int idT = Integer.parseInt(scanner.nextLine());
+        Empleado emp = empleados.stream()
+            .filter(e -> e.getId() == idT)
+            .findFirst().orElse(null);
+        if (emp == null) {
             System.out.println("Trabajador no encontrado.");
             return;
         }
-        // Se puede simular la asignación con un método en Empleado (por ejemplo, asignarTurno) o simplemente mostrar el mensaje
-        System.out.println("El trabajador " + trabajadorAsignar.getNombre() + " ha sido asignado a la atracción " + atracSeleccionada.getNombre());
-        // Podrías almacenar esta asignación en un mapa (por ejemplo, Map<Integer, Empleado> asignacionTrabajadores) para referencia futura.
+        System.out.println("Asignado " + emp.getNombre() + " a " + atr.getNombre());
     }
-    
+
     private static void venderTiquete() {
-        // Se simula que un trabajador de taquilla vende un tiquete a un cliente.
-        System.out.print("Ingrese el ID del trabajador de taquilla que realiza la venta: ");
-        int idTrabajador = scanner.nextInt();
-        scanner.nextLine();
-        Empleado trabajadorVenta = null;
-        for (Empleado t : empleados) {
-            if (t.getId() == idTrabajador) {
-                trabajadorVenta = t;
-                break;
-            }
-        }
-        if (trabajadorVenta == null) {
-            System.out.println("Trabajador no encontrado.");
+        System.out.print("ID vendedor (empleado): ");
+        int idV = Integer.parseInt(scanner.nextLine());
+        Empleado ven = empleados.stream()
+            .filter(e -> e.getId() == idV)
+            .findFirst().orElse(null);
+        if (ven == null) {
+            System.out.println("Empleado no encontrado.");
             return;
         }
-        System.out.print("Ingrese el ID del cliente que comprará el tiquete: ");
-        int idCliente = scanner.nextInt();
-        scanner.nextLine();
-        Cliente clienteCompra = null;
-        for (Cliente c : clientes) {
-            if (c.getId() == idCliente) {
-                clienteCompra = c;
-                break;
-            }
-        }
-        if (clienteCompra == null) {
+        System.out.print("ID cliente: ");
+        int idC = Integer.parseInt(scanner.nextLine());
+        Cliente cli = clientes.stream()
+            .filter(c -> c.getId() == idC)
+            .findFirst().orElse(null);
+        if (cli == null) {
             System.out.println("Cliente no encontrado.");
             return;
         }
-        // Crear un tiquete básico: para simplificar, no asignamos atracciones en este ejemplo.
-        TiquetesNormales tiquete = new TiquetesNormales("T" + System.currentTimeMillis(), Tipo.FAMILIAR, new ArrayList<>(), 0);
-        System.out.print("Ingrese el precio del tiquete: ");
-        float precio = scanner.nextFloat();
-        scanner.nextLine();
-        System.out.print("Ingrese el monto pagado por el cliente: ");
-        float pago = scanner.nextFloat();
-        scanner.nextLine();
-        
+        System.out.print("Precio del tiquete: ");
+        float precio = Float.parseFloat(scanner.nextLine());
+        System.out.print("Monto pagado: ");
+        float pago = Float.parseFloat(scanner.nextLine());
+
         if (pago >= precio) {
-            System.out.println("Pago aceptado. Venta completada por " + trabajadorVenta.getNombre());
-            // El cliente compra el tiquete (se añade una descripción en su historial de compras)
-            clienteCompra.comprarTiquete("Tiquete " + tiquete.getId() + " de tipo " + tiquete.getTipo() + " comprado a $" + precio);
-            tiquetes.add(tiquete);
+            TiquetesNormales t = new TiquetesNormales(
+                "T" + System.currentTimeMillis(),
+                Tipo.FAMILIAR, new ArrayList<>(), 0
+            );
+            tiquetes.add(t);
+            cli.comprarTiquete("Tiquete " + t.getId() +
+                " tipo " + t.getTipo() + " comprado a $" + precio);
+            System.out.println("Venta completada. Cambio: $" + (pago - precio));
         } else {
-            System.out.println("Monto insuficiente. Venta cancelada.");
+            System.out.println("Pago insuficiente. Venta cancelada.");
         }
     }
-    
-    // Guardar datos en archivos JSON utilizando la persistencia
+
+    private static void validarAcceso() {
+        System.out.print("ID tiquete: ");
+        String idT = scanner.nextLine();
+        TiquetesNormales tik = tiquetes.stream()
+            .filter(t -> t.getId().equals(idT))
+            .findFirst().orElse(null);
+        if (tik == null) {
+            System.out.println("Tiquete no válido.");
+            return;
+        }
+        if (tik.isUtilizado()) {
+            System.out.println("Tiquete ya usado.");
+            return;
+        }
+        System.out.print("ID atracción: ");
+        int idA = Integer.parseInt(scanner.nextLine());
+        Atraccion atr = atracciones.stream()
+            .filter(a -> a.getId() == idA)
+            .findFirst().orElse(null);
+        if (atr == null) {
+            System.out.println("Atracción no encontrada.");
+            return;
+        }
+
+        Map<String,Object> params = new HashMap<>();
+        if (atr instanceof AtraccionMecanica) {
+            System.out.print("Altura (m): ");
+            params.put("altura", Double.parseDouble(scanner.nextLine()));
+            System.out.print("Peso (kg): ");
+            params.put("peso", Double.parseDouble(scanner.nextLine()));
+        } else {
+            System.out.print("Edad visitante: ");
+            params.put("edad", Integer.parseInt(scanner.nextLine()));
+        }
+
+        boolean ok = atr.validarAcceso(params);
+        if (ok) {
+            tik.setUtilizado(true);
+            System.out.println("Acceso permitido. ¡Disfruta!");
+        } else {
+            System.out.println("Acceso denegado por restricciones.");
+        }
+    }
+
     private static void guardarDatos() {
-        boolean okClientes = persClientes.guardarListaClientes(clientes);
-        boolean okEmpleados = persEmpleados.guardarListaEmpleados(empleados);
-        boolean okAtracciones = persAtracciones.guardarListaAtracciones(atracciones);
-        boolean okTiquetes = persTiquetes.guardarListaTiquetes(tiquetes);
-        
-        if (okClientes && okEmpleados && okAtracciones && okTiquetes) {
-            System.out.println("Todos los datos se han guardado exitosamente en JSON.");
-        } else {
-            System.out.println("Error al guardar algunos datos.");
-        }
+        persClientes.guardarListaClientes(clientes);
+        persEmpleados.guardarListaEmpleados(empleados);
+        persAtracciones.guardarListaAtracciones(atracciones);
+        persTiquetes.guardarListaTiquetes(tiquetes);
+        System.out.println("Datos guardados.");
     }
-    
-    // Cargar datos desde archivos JSON
+
     private static void cargarDatos() {
-        clientes = persClientes.cargarListaClientes();
-        empleados = persEmpleados.cargarListaEmpleados();
+        clientes    = persClientes.cargarListaClientes();
+        empleados   = persEmpleados.cargarListaEmpleados();
         atracciones = persAtracciones.cargarListaAtracciones();
-        tiquetes = persTiquetes.cargarListaTiquetes();
-        System.out.println("Datos cargados desde archivos JSON.");
+        tiquetes    = persTiquetes.cargarListaTiquetes();
+        System.out.println("Datos recargados.");
     }
-    
-    // Mostrar información general del sistema
+
     private static void mostrarInformacion() {
         System.out.println("\n--- Clientes ---");
-        for (Cliente c : clientes) {
-            c.mostrarInformacion();
-        }
+        clientes.forEach(Cliente::mostrarInformacion);
         System.out.println("\n--- Trabajadores ---");
-        for (Empleado t : empleados) {
-            t.mostrarInformacion();
-        }
+        empleados.forEach(Empleado::mostrarInformacion);
         System.out.println("\n--- Atracciones ---");
-        for (Atraccion a : atracciones) {
-            System.out.println("ID: " + a.getId() + ", Nombre: " + a.getNombre() +
-                    ", Capacidad: " + a.getCapacidad() + ", Ubicación: " + a.getUbicacion() +
-                    ", Exclusividad: " + a.getNivelExclusividad() + ", Estado: " + a.obtenerEstado());
-        }
+        atracciones.forEach(a ->
+            System.out.printf("ID:%d, %s, Cap:%d, Ubic:%s, Nivel:%s, Estado:%s%n",
+                a.getId(), a.getNombre(), a.getCapacidad(),
+                a.getUbicacion(), a.getNivelExclusividad(), a.obtenerEstado())
+        );
         System.out.println("\n--- Tiquetes Vendidos ---");
-        for (TiquetesNormales t : tiquetes) {
-            System.out.println("ID: " + t.getId() + ", Tipo: " + t.getTipo() + ", Utilizado: " + t.isUtilizado());
-        }
+        tiquetes.forEach(t ->
+            System.out.printf("ID:%s, Tipo:%s, Usado:%b%n",
+                t.getId(), t.getTipo(), t.isUtilizado())
+        );
     }
 }

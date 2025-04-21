@@ -1,14 +1,11 @@
 package modelo.persistencia;
-
 import modelo.empleados.Cliente;
 import java.util.List;
 import java.util.ArrayList;
-
 /**
  * Clase especializada en persistir la lista de clientes en un archivo JSON.
  */
 public class PersistenceClientes extends JSONPersistenceManager {
-
     private static final String ARCHIVO_CLIENTES = "clientes.json";
     
     public PersistenceClientes(String rutaAlmacenamiento) {
@@ -17,7 +14,7 @@ public class PersistenceClientes extends JSONPersistenceManager {
     
     /**
      * Guarda la lista de clientes en el archivo JSON.
-     * Se asume que cada Cliente implementa el método toJson().
+     * Utiliza el método toJson() de cada Cliente.
      *
      * @param lista Lista de clientes a guardar.
      * @return true si se guardó correctamente, false en caso contrario.
@@ -38,8 +35,7 @@ public class PersistenceClientes extends JSONPersistenceManager {
     
     /**
      * Carga la lista de clientes desde el archivo JSON.
-     * Se asume que el contenido tiene el formato:
-     * {"clientes":[ { ... }, { ... } ]}
+     * Utiliza el método fromJson() de la clase Cliente.
      *
      * @return Lista de clientes o una lista vacía si no se encuentra el archivo.
      */
@@ -49,8 +45,8 @@ public class PersistenceClientes extends JSONPersistenceManager {
         if (contenido == null || contenido.isEmpty()) {
             return lista;
         }
-        // Aquí se asume un parseo sencillo: se separan los objetos mediante delimitadores simples.
-        // Este parseo es muy básico y para un modelo beta.
+        
+        // Extraer el array de clientes del JSON
         int inicio = contenido.indexOf('[');
         int fin = contenido.lastIndexOf(']');
         if (inicio < 0 || fin < 0) {
@@ -59,6 +55,37 @@ public class PersistenceClientes extends JSONPersistenceManager {
         String arrayContent = contenido.substring(inicio + 1, fin).trim();
         if (arrayContent.isEmpty()) {
             return lista;
-       C
+        }
+        
+        // Dividir el contenido del array por objetos JSON individuales
+        int level = 0;
+        int startPos = 0;
+        
+        for (int i = 0; i < arrayContent.length(); i++) {
+            char c = arrayContent.charAt(i);
+            if (c == '{') level++;
+            else if (c == '}') level--;
+            
+            // Cuando encontramos el cierre de un objeto JSON completo
+            if (c == '}' && level == 0) {
+                // Extraer el objeto JSON completo
+                String clienteJson = arrayContent.substring(startPos, i + 1).trim();
+                try {
+                    // Crear el objeto Cliente usando el método fromJson
+                    Cliente cliente = Cliente.fromJson(clienteJson);
+                    lista.add(cliente);
+                } catch (Exception e) {
+                    System.err.println("Error al parsear cliente: " + e.getMessage());
+                }
+                
+                // Buscar el inicio del siguiente objeto
+                while (i + 1 < arrayContent.length() && arrayContent.charAt(i + 1) != '{') {
+                    i++;
+                }
+                startPos = i + 1;
+            }
+        }
+        
+        return lista;
     }
 }

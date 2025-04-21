@@ -3,6 +3,7 @@ package modelo.tiquetes;
 import java.util.Date;
 import java.util.List;
 import modelo.atraccion.Atraccion;
+import modelo.empleados.Usuario;
 
 /**
  * Representa un tiquete FastPass, que extiende TiquetesNormales.
@@ -46,10 +47,5 @@ public class TiquetesFastPass extends TiquetesNormales {
         return fechaEntrada;
     }
 
-    // Ejemplo de sobreescritura de setDescuento(Usuario user) si se desea
-    @Override
-    public void setDescuento(Usuario user) {
-        // Se podría aplicar un descuento adicional especial para FastPass
-        super.setDescuento(user); // Llama la lógica base
-    }
+  
 }
