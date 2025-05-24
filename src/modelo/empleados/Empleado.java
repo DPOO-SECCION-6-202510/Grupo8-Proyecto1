@@ -111,7 +111,7 @@ public class Empleado extends Usuario {
             int id = 0;
             String nombre = "";
             String login = "";
-            String password = ""; // Se necesitará proporcionar un valor por defecto
+            String password = ""; // Ahora se parseará correctamente del JSON
             TipoUsuario tipo = null;
             String cargo = "";
             boolean disponible = true;
@@ -137,6 +137,9 @@ public class Empleado extends Usuario {
                     case "login":
                         login = unescapeJson(value.replace("\"", ""));
                         break;
+                    case "password":
+                        password = unescapeJson(value.replace("\"", ""));
+                        break;
                     case "tipo":
                         String tipoStr = value.replace("\"", "");
                         if (!tipoStr.equals("null")) {
@@ -155,9 +158,8 @@ public class Empleado extends Usuario {
                 }
             }
             
-            // Crear el objeto Empleado
-            // Nota: Se usa password vacío por defecto, podría requerir ajuste según necesidades
-            Empleado empleado = new Empleado(id, nombre, login, "", tipo, cargo);
+            // Crear el objeto Empleado con la password parseada del JSON
+            Empleado empleado = new Empleado(id, nombre, login, password, tipo, cargo);
             empleado.setDisponible(disponible);
             empleado.setCertificaciones(certificaciones);
             

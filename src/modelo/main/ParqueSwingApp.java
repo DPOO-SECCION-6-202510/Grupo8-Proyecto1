@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Random;
+import java.io.*;
 
 public class ParqueSwingApp extends JFrame {
     private List<Cliente> clientes;
@@ -51,6 +52,7 @@ public class ParqueSwingApp extends JFrame {
         empleados   = new ArrayList<>(persEmpleados.cargarListaEmpleados());
         atracciones = persAtracciones.cargarListaAtracciones();
         tiquetes    = persTiquetes.cargarListaTiquetes();
+        cargarAsignaciones(); // Cargar asignaciones desde archivo
 
         initUI();
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -175,10 +177,8 @@ public class ParqueSwingApp extends JFrame {
     }
 
     private JPanel createEmployeePanel(){
-        JPanel p=new JPanel(new GridLayout(4,1,5,5));
-        p.add(makeButton("Agregar Cliente", e->onAgregarCliente()));
-        p.add(makeButton("Vender Tiquete", e->onVenderTiquete()));
-        p.add(makeButton("Validar Acceso", e->onValidarAcceso()));
+        JPanel p=new JPanel(new GridLayout(2,1,5,5));
+        p.add(makeButton("Ver Mi Atracción Asignada", e->onVerAtraccionAsignada()));
         p.add(makeButton("Logout", e->cardLayout.show(cards,"login")));
         return p;
     }
@@ -213,24 +213,93 @@ public class ParqueSwingApp extends JFrame {
     }
 
     private void onLogin(ActionEvent e){
-        String u=loginField.getText().trim(), p=new String(passField.getPassword());
-        if(u.equals("admin")&&p.equals("admin")){
-            currentRole="ADMIN";
-            cardLayout.show(cards,"admin");
+        String u = loginField.getText().trim();
+        String p = new String(passField.getPassword()).trim(); // ← AGREGAR .trim() aquí
+        
+        // Debug: imprimir credenciales para verificar
+        System.out.println("Usuario ingresado: '" + u + "'");
+        System.out.println("Password ingresado: '" + p + "'");
+        
+        if(u.equals("admin") && p.equals("admin")){
+            currentRole = "ADMIN";
+            cardLayout.show(cards, "admin");
             return;
         }
-        for(Empleado emp:empleados) if(emp.getLogin().equals(u)&&emp.getPassword().equals(p)){
-            currentRole="EMPLEADO";
-            cardLayout.show(cards,"employee");
+        
+        // Debug para empleados
+        System.out.println("Buscando en " + empleados.size() + " empleados:");
+        for(Empleado emp : empleados) {
+            System.out.println("Empleado: '" + emp.getLogin().trim() + "' / '" + emp.getPassword().trim() + "'");
+            
+            if(emp.getLogin().trim().equals(u) && emp.getPassword().trim().equals(p)){
+                currentRole = "EMPLEADO";
+                currentUserId = emp.getId();
+                cardLayout.show(cards, "employee");
+                System.out.println("Login exitoso para empleado: " + emp.getNombre());
+                return;
+            }
+        }
+        
+        // Debug para clientes
+        System.out.println("Buscando en " + clientes.size() + " clientes:");
+        for(Cliente cli : clientes) {
+            System.out.println("Cliente: '" + cli.getLogin().trim() + "' / '" + cli.getPassword().trim() + "'");
+            
+            if(cli.getLogin().trim().equals(u) && cli.getPassword().trim().equals(p)){
+                currentRole = "CLIENTE";
+                currentUserId = cli.getId();
+                cardLayout.show(cards, "client");
+                System.out.println("Login exitoso para cliente: " + cli.getNombre());
+                return;
+            }
+        }
+        
+        System.out.println("No se encontraron credenciales válidas");
+        JOptionPane.showMessageDialog(this, "Credenciales inválidas.");
+    }
+
+    // Método para que el empleado vea su atracción asignada
+    private void onVerAtraccionAsignada(){
+        Integer atraccionId = asignaciones.get(currentUserId);
+        if(atraccionId == null){
+            JOptionPane.showMessageDialog(this, "No tienes ninguna atracción asignada.");
             return;
         }
-        for(Cliente cli:clientes) if(cli.getLogin().equals(u)&&cli.getPassword().equals(p)){
-            currentRole="CLIENTE";
-            currentUserId=cli.getId();
-            cardLayout.show(cards,"client");
+        
+        Atraccion atraccion = atracciones.stream()
+            .filter(a -> a.getId() == atraccionId)
+            .findFirst()
+            .orElse(null);
+            
+        if(atraccion == null){
+            JOptionPane.showMessageDialog(this, "Error: Atracción no encontrada.");
             return;
         }
-        JOptionPane.showMessageDialog(this,"Credenciales inválidas.");
+        
+        String info = String.format(
+            "Atracción Asignada:\n\n" +
+            "ID: %d\n" +
+            "Nombre: %s\n" +
+            "Capacidad: %d\n" +
+            "Ubicación: %s\n" +
+            "Nivel: %s",
+            atraccion.getId(),
+            atraccion.getNombre(),
+            atraccion.getCapacidad(),
+            atraccion.getUbicacion(),
+            atraccion.getNivelExclusividad()
+        );
+        
+        JTextArea area = new JTextArea(info);
+        area.setEditable(false);
+        JScrollPane scroll = new JScrollPane(area);
+        scroll.setPreferredSize(new Dimension(300, 200));
+        JOptionPane.showMessageDialog(
+            this, 
+            scroll, 
+            "Mi Atracción", 
+            JOptionPane.INFORMATION_MESSAGE
+        );
     }
 
     // Cliente actions
@@ -397,6 +466,7 @@ public class ParqueSwingApp extends JFrame {
             if(sel==null) return;
             int idE=Integer.parseInt(sel.split(" - ")[0]);
             asignaciones.put(idE, idA);
+            guardarAsignaciones(); // Persistir las asignaciones
             JOptionPane.showMessageDialog(this,
                 "Empleado asignado correctamente.");
         }catch(Exception ex){ 
@@ -444,24 +514,174 @@ public class ParqueSwingApp extends JFrame {
         }
     }
 
+    // Métodos para persistir las asignaciones
+    private void guardarAsignaciones() {
+        try {
+            File dataDir = new File("data");
+            if (!dataDir.exists()) {
+                dataDir.mkdirs();
+            }
+            
+            try (ObjectOutputStream oos = new ObjectOutputStream(
+                    new FileOutputStream("data/asignaciones.dat"))) {
+                oos.writeObject(asignaciones);
+            }
+        } catch (IOException e) {
+            System.err.println("Error al guardar asignaciones: " + e.getMessage());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void cargarAsignaciones() {
+        try {
+            File file = new File("data/asignaciones.dat");
+            if (file.exists()) {
+                try (ObjectInputStream ois = new ObjectInputStream(
+                        new FileInputStream(file))) {
+                    asignaciones = (HashMap<Integer, Integer>) ois.readObject();
+                }
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            System.err.println("Error al cargar asignaciones: " + e.getMessage());
+            asignaciones = new HashMap<>();
+        }
+    }
+
     private void onAgregarCliente() { cardLayout.show(cards,"register"); }
     private void onRemoveCliente() {
-        // Implementación pendiente
-        JOptionPane.showMessageDialog(this, "Funcionalidad no implementada aún");
+        try {
+            if (clientes.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "No hay clientes para eliminar");
+                return;
+            }
+
+            // Crear lista de opciones con ID y nombre
+            String[] opts = clientes.stream()
+                .map(cli -> cli.getId() + " - " + cli.getNombre())
+                .toArray(String[]::new);
+
+            String seleccion = (String) JOptionPane.showInputDialog(
+                this,
+                "Seleccione el cliente a eliminar:",
+                "Eliminar Cliente",
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                opts,
+                opts[0]
+            );
+
+            if (seleccion == null) return; // Usuario canceló
+
+            // Extraer ID del cliente seleccionado
+            int idCliente = Integer.parseInt(seleccion.split(" - ")[0]);
+
+            // Buscar el cliente
+            Cliente clienteAEliminar = clientes.stream()
+                .filter(cli -> cli.getId() == idCliente)
+                .findFirst()
+                .orElse(null);
+
+            if (clienteAEliminar == null) {
+                JOptionPane.showMessageDialog(this, "Error: Cliente no encontrado");
+                return;
+            }
+
+            // Confirmar eliminación
+            int confirmacion = JOptionPane.showConfirmDialog(
+                this,
+                String.format("¿Está seguro de eliminar al cliente:\n%s (ID: %d)?", 
+                    clienteAEliminar.getNombre(), clienteAEliminar.getId()),
+                "Confirmar Eliminación",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE
+            );
+
+            if (confirmacion == JOptionPane.YES_OPTION) {
+                // Eliminar de la lista
+                clientes.remove(clienteAEliminar);
+                
+                // Persistir cambios
+                persClientes.guardarListaClientes(clientes);
+
+                JOptionPane.showMessageDialog(
+                    this, 
+                    "Cliente eliminado correctamente"
+                );
+            }
+
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Error al eliminar cliente: " + ex.getMessage());
+        }
     }
     private void onAgregarTrabajador() { cardLayout.show(cards,"register"); }
     private void onRemoveTrabajador() {
-        // Implementación pendiente
-        JOptionPane.showMessageDialog(this, "Funcionalidad no implementada aún");
-    }
+        try {
+            if (empleados.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "No hay trabajadores para eliminar");
+                return;
+            }
 
-    private void onVenderTiquete(){
-        // Implementación pendiente
-        JOptionPane.showMessageDialog(this, "Funcionalidad no implementada aún");
-    }
-    private void onValidarAcceso(){
-        // Implementación pendiente
-        JOptionPane.showMessageDialog(this, "Funcionalidad no implementada aún");
+            // Crear lista de opciones con ID y nombre
+            String[] opts = empleados.stream()
+                .map(emp -> emp.getId() + " - " + emp.getNombre())
+                .toArray(String[]::new);
+
+            String seleccion = (String) JOptionPane.showInputDialog(
+                this,
+                "Seleccione el trabajador a eliminar:",
+                "Eliminar Trabajador",
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                opts,
+                opts[0]
+            );
+
+            if (seleccion == null) return; // Usuario canceló
+
+            // Extraer ID del trabajador seleccionado
+            int idTrabajador = Integer.parseInt(seleccion.split(" - ")[0]);
+
+            // Buscar el empleado
+            Empleado empleadoAEliminar = empleados.stream()
+                .filter(emp -> emp.getId() == idTrabajador)
+                .findFirst()
+                .orElse(null);
+
+            if (empleadoAEliminar == null) {
+                JOptionPane.showMessageDialog(this, "Error: Trabajador no encontrado");
+                return;
+            }
+
+            // Confirmar eliminación
+            int confirmacion = JOptionPane.showConfirmDialog(
+                this,
+                String.format("¿Está seguro de eliminar al trabajador:\n%s (ID: %d)?", 
+                    empleadoAEliminar.getNombre(), empleadoAEliminar.getId()),
+                "Confirmar Eliminación",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE
+            );
+
+            if (confirmacion == JOptionPane.YES_OPTION) {
+                // Eliminar de la lista
+                empleados.remove(empleadoAEliminar);
+                
+                // Eliminar asignación si existe
+                asignaciones.remove(idTrabajador);
+                
+                // Persistir cambios
+                persEmpleados.guardarListaEmpleados(empleados);
+                guardarAsignaciones();
+
+                JOptionPane.showMessageDialog(
+                    this, 
+                    "Trabajador eliminado correctamente"
+                );
+            }
+
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Error al eliminar trabajador: " + ex.getMessage());
+        }
     }
 
     private void onSalir(){
@@ -469,6 +689,7 @@ public class ParqueSwingApp extends JFrame {
         persEmpleados.guardarListaEmpleados(empleados);
         persAtracciones.guardarListaAtracciones(atracciones);
         persTiquetes.guardarListaTiquetes(tiquetes);
+        guardarAsignaciones(); // Guardar asignaciones al salir
         System.exit(0);
     }
 
