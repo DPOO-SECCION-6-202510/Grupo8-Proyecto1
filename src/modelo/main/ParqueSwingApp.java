@@ -261,7 +261,7 @@ public class ParqueSwingApp extends JFrame {
                 case ORO:      precio = 100f; break;
                 case DIAMANTE: precio = 150f; break;
                 case BASICO:precio = 200f; break;
-                
+               
                 default:       precio = 50f; break;
             }
 
