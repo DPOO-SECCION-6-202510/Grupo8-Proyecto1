@@ -1,5 +1,4 @@
 package modelo.empleados;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -63,7 +62,6 @@ public class Empleado extends Usuario {
     }
 
     // Métodos
-
     @Override
     public void mostrarInformacion() {
         System.out.println("Empleado: " + getNombre());
@@ -87,5 +85,175 @@ public class Empleado extends Usuario {
 
     public void registrarAsistencia() {
         System.out.println("Asistencia registrada para: " + getNombre());
+    }
+
+    /**
+     * Crea un objeto Empleado a partir de una cadena JSON
+     * @param jsonString cadena JSON que representa un empleado
+     * @return objeto Empleado deserializado
+     * @throws IllegalArgumentException si el JSON no es válido o no contiene los campos requeridos
+     */
+    public static Empleado fromJson(String jsonString) {
+        if (jsonString == null || jsonString.trim().isEmpty()) {
+            throw new IllegalArgumentException("El JSON no puede ser nulo o vacío");
+        }
+        
+        try {
+            // Remover espacios y llaves externas
+            String json = jsonString.trim();
+            if (!json.startsWith("{") || !json.endsWith("}")) {
+                throw new IllegalArgumentException("JSON mal formado");
+            }
+            
+            json = json.substring(1, json.length() - 1); // Remover { }
+            
+            // Variables para almacenar los valores
+            int id = 0;
+            String nombre = "";
+            String login = "";
+            String password = ""; // Se necesitará proporcionar un valor por defecto
+            TipoUsuario tipo = null;
+            String cargo = "";
+            boolean disponible = true;
+            List<String> certificaciones = new ArrayList<>();
+            
+            // Parsear campos básicos
+            String[] campos = splitJsonFields(json);
+            
+            for (String campo : campos) {
+                String[] keyValue = campo.split(":", 2);
+                if (keyValue.length != 2) continue;
+                
+                String key = keyValue[0].trim().replace("\"", "");
+                String value = keyValue[1].trim();
+                
+                switch (key) {
+                    case "id":
+                        id = Integer.parseInt(value);
+                        break;
+                    case "nombre":
+                        nombre = unescapeJson(value.replace("\"", ""));
+                        break;
+                    case "login":
+                        login = unescapeJson(value.replace("\"", ""));
+                        break;
+                    case "tipo":
+                        String tipoStr = value.replace("\"", "");
+                        if (!tipoStr.equals("null")) {
+                            tipo = TipoUsuario.valueOf(tipoStr);
+                        }
+                        break;
+                    case "cargo":
+                        cargo = unescapeJson(value.replace("\"", ""));
+                        break;
+                    case "disponible":
+                        disponible = Boolean.parseBoolean(value);
+                        break;
+                    case "certificaciones":
+                        certificaciones = parseCertificaciones(value);
+                        break;
+                }
+            }
+            
+            // Crear el objeto Empleado
+            // Nota: Se usa password vacío por defecto, podría requerir ajuste según necesidades
+            Empleado empleado = new Empleado(id, nombre, login, "", tipo, cargo);
+            empleado.setDisponible(disponible);
+            empleado.setCertificaciones(certificaciones);
+            
+            return empleado;
+            
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Error al parsear JSON: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * Método auxiliar para dividir los campos del JSON
+     * @param json contenido JSON sin llaves externas
+     * @return array de campos
+     */
+    private static String[] splitJsonFields(String json) {
+        List<String> fields = new ArrayList<>();
+        StringBuilder currentField = new StringBuilder();
+        boolean inQuotes = false;
+        boolean inArray = false;
+        boolean inObject = false;
+        int objectDepth = 0;
+        int arrayDepth = 0;
+        
+        for (int i = 0; i < json.length(); i++) {
+            char c = json.charAt(i);
+            
+            if (c == '"' && (i == 0 || json.charAt(i-1) != '\\')) {
+                inQuotes = !inQuotes;
+            } else if (!inQuotes) {
+                if (c == '[') {
+                    inArray = true;
+                    arrayDepth++;
+                } else if (c == ']') {
+                    arrayDepth--;
+                    if (arrayDepth == 0) inArray = false;
+                } else if (c == '{') {
+                    inObject = true;
+                    objectDepth++;
+                } else if (c == '}') {
+                    objectDepth--;
+                    if (objectDepth == 0) inObject = false;
+                } else if (c == ',' && !inArray && !inObject) {
+                    fields.add(currentField.toString().trim());
+                    currentField = new StringBuilder();
+                    continue;
+                }
+            }
+            
+            currentField.append(c);
+        }
+        
+        if (currentField.length() > 0) {
+            fields.add(currentField.toString().trim());
+        }
+        
+        return fields.toArray(new String[0]);
+    }
+    
+    /**
+     * Parsea el array de certificaciones del JSON
+     * @param arrayJson string que representa el array JSON
+     * @return lista de certificaciones
+     */
+    private static List<String> parseCertificaciones(String arrayJson) {
+        List<String> certificaciones = new ArrayList<>();
+        
+        if (arrayJson.equals("[]")) {
+            return certificaciones;
+        }
+        
+        // Remover corchetes
+        String content = arrayJson.substring(1, arrayJson.length() - 1);
+        String[] items = content.split(",");
+        
+        for (String item : items) {
+            String cert = item.trim().replace("\"", "");
+            if (!cert.isEmpty()) {
+                certificaciones.add(unescapeJson(cert));
+            }
+        }
+        
+        return certificaciones;
+    }
+    
+    /**
+     * Método auxiliar para des-escapar caracteres especiales del JSON
+     * @param str cadena a des-escapar
+     * @return cadena des-escapada
+     */
+    private static String unescapeJson(String str) {
+        if (str == null || str.equals("null")) return null;
+        return str.replace("\\\"", "\"")
+                  .replace("\\\\", "\\")
+                  .replace("\\n", "\n")
+                  .replace("\\r", "\r")
+                  .replace("\\t", "\t");
     }
 }
